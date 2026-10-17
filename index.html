@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متابع تراكمات المحاضرات - المرحلة الثانية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- مكتبة تحويل الصفحة إلى PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary: #0288D1;
+            --primary-dark: #01579B;
+            --primary-light: #E0F7FA;
+            --accent: #00A896;
+            --bg-color: #F0F8FF;
+            --card-bg: #FFFFFF;
+            --text-dark: #1A252C;
+            --text-muted: #5A6E79;
+            --border-color: #D0E3EF;
+            --completed-green: #2E7D32;
+            --pending-red: #C62828;
+            --border-radius: 14px;
+        }
+
+        [data-theme="sky-sea"] {
+            --primary: #0288D1; --primary-dark: #01579B; --primary-light: #E0F7FA;
+            --accent: #023E8A; --bg-color: #F0F8FF; --card-bg: #FFFFFF;
+            --text-dark: #1A252C; --text-muted: #5A6E79; --border-color: #D0E3EF;
+        }
+        [data-theme="brown-beige"] {
+            --primary: #4A3525; --primary-dark: #2C1E14; --primary-light: #F5EBE6;
+            --accent: #C68B59; --bg-color: #FAF6F0; --card-bg: #FFFFFF;
+            --text-dark: #2A1D15; --text-muted: #7A685B; --border-color: #E8D8CE;
+        }
+        [data-theme="pink-white"] {
+            --primary: #D81B60; --primary-dark: #880E4F; --primary-light: #FCE4EC;
+            --accent: #FF80AB; --bg-color: #FFF5F8; --card-bg: #FFFFFF;
+            --text-dark: #331A24; --text-muted: #885A6E; --border-color: #F8D0DF;
+        }
+        [data-theme="burgundy"] {
+            --primary: #58111A; --primary-dark: #3B0B11; --primary-light: #FFF8E7;
+            --accent: #E5A93C; --bg-color: #FBF8F5; --card-bg: #FFFFFF;
+            --text-dark: #2A1810; --text-muted: #7A635B; --border-color: #EFE4DC;
+        }
+        body.dark-mode {
+            --bg-color: #000000; --card-bg: #121212; --text-dark: #F5F5F5;
+            --text-muted: #A0A0A0; --border-color: #262626; --primary-light: #1A1A1A;
+        }
+        * {
+            box-sizing: border-box; font-family: 'Tajawal', sans-serif; margin: 0; padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: var(--bg-color); color: var(--text-dark); padding: 20px 12px 60px;
+            direction: rtl; min-height: 100vh; display: flex; flex-direction: column;
+            justify-content: space-between; transition: background-color 0.3s, color 0.3s;
+        }
+        .container { max-width: 900px; margin: 0 auto; width: 100%; }
+        header {
+            text-align: center; margin-bottom: 20px; padding: 22px 20px;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            border-radius: var(--border-radius); box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            color: #FFFFFF; border-bottom: 4px solid var(--accent);
+        }
+        header h1 { font-size: 1.8rem; font-weight: 800; color: #FFFFFF; margin-bottom: 6px; }
+        header p { color: rgba(255,255,255,0.85); font-size: 0.95rem; }
+        .tools-bar {
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between;
+            align-items: center; background: var(--card-bg); padding: 12px 16px;
+            border-radius: var(--border-radius); margin-bottom: 20px;
+            border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+        .tool-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .tool-btn {
+            background: var(--primary-light); color: var(--primary-dark);
+            border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 8px;
+            font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        body.dark-mode .tool-btn { color: var(--text-dark); }
+        .tool-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .tool-btn.btn-add-system { background: var(--primary); color: #fff; border: none; }
+        .tool-btn.btn-add-standalone { background: var(--accent); color: #fff; border: none; }
+        .theme-select {
+            background: var(--card-bg); color: var(--text-dark); border: 1px solid var(--border-color);
+            padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+        }
+        .overall-progress-card {
+            background: var(--card-bg); border-radius: var(--border-radius); padding: 18px 20px;
+            margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid var(--border-color);
+        }
+        .progress-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; font-weight: 700; font-size: 0.95rem; color: var(--primary);
+        }
+        .progress-bar-bg { height: 12px; background: var(--primary-light); border-radius: 10px; overflow: hidden; position: relative; }
+        .progress-bar-fill {
+            height: 100%; background: linear-gradient(90deg, var(--accent), var(--primary));
+            width: 0%; transition: width 0.4s ease; border-radius: 10px;
+        }
+        .modules-nav {
+            display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px;
+            scrollbar-width: thin; align-items: center;
+        }
+        .module-tab {
+            background: var(--card-bg); color: var(--text-dark); border: 1.5px solid var(--border-color);
+            padding: 8px 14px; border-radius: 20px; font-weight: 700; font-size: 0.88rem;
+            cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .module-tab.active, .module-tab:hover {
+            background: var(--primary); color: #fff; border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .module-icon { font-size: 1.1rem; }
+        .type-badge {
+            font-size: 0.72rem; padding: 2px 6px; border-radius: 6px;
+            background: var(--primary-light); color: var(--primary-dark); border: 1px solid var(--border-color);
+        }
+        .section-header-box {
+            display: flex; justify-content: space-between; align-items: center;
+            margin: 20px 0 12px; padding-right: 12px; border-right: 4px solid var(--accent);
+        }
+        .section-title {
+            font-size: 1.2rem; font-weight: 800; color: var(--primary);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .subjects-grid { display: flex; flex-direction: column; gap: 12px; }
+        .subject-card {
+            background: var(--card-bg); border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;
+            transition: all 0.2s ease; border: 1px solid var(--border-color);
+        }
+        .subject-header {
+            padding: 16px 18px; display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; background: var(--card-bg); user-select: none; transition: background 0.2s;
+        }
+        .subject-header:hover { background: var(--primary-light); }
+        .subject-title {
+            font-size: 0.98rem; font-weight: 700; color: var(--text-dark);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .subject-stats { display: flex; gap: 8px; align-items: center; font-size: 0.8rem; }
+        .badge { padding: 3px 9px; border-radius: 12px; font-weight: 700; }
+        .badge-completed { background-color: rgba(46,125,50,0.12); color: var(--completed-green); }
+        .badge-pending { background-color: rgba(198,40,40,0.12); color: var(--pending-red); }
+        .lectures-list { display: none; padding: 10px 18px 15px; background: var(--card-bg); border-top: 1px solid var(--border-color); }
+        .subject-card.active .lectures-list { display: block; }
+        .lecture-item-container { border-bottom: 1px dashed var(--border-color); padding: 8px 0; }
+        .lecture-item-container:last-child { border-bottom: none; }
+        .lecture-item { display: flex; align-items: center; justify-content: space-between; }
+        .lecture-info { display: flex; align-items: center; gap: 10px; flex: 1; }
+        .lecture-checkbox { width: 19px; height: 19px; cursor: pointer; accent-color: var(--primary); border-radius: 4px; }
+        .lecture-title { font-size: 0.92rem; color: var(--text-dark); font-weight: 600; }
+        .lecture-title.done { text-decoration: line-through; color: var(--text-muted); }
+        .status-tag { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+        .status-tag.done { background: rgba(46,125,50,0.12); color: var(--completed-green); }
+        .status-tag.pending { background: rgba(198,40,40,0.12); color: var(--pending-red); }
+        .icon-btn { background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.6; transition: opacity 0.2s; padding: 2px 4px; }
+        .icon-btn:hover { opacity: 1; }
+        .lecture-note-area { margin-top: 6px; padding-right: 30px; }
+        .note-input {
+            width: 100%; padding: 6px 10px; border: 1px solid var(--border-color);
+            border-radius: 6px; font-size: 0.82rem; background: var(--primary-light); color: var(--text-dark); outline: none;
+        }
+        .add-lecture-btn {
+            margin-top: 12px; width: 100%; padding: 8px; border: 1px dashed var(--primary);
+            background: var(--primary-light); color: var(--primary-dark); border-radius: 8px;
+            font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
+        }
+        .add-lecture-btn:hover { background: var(--primary); color: #fff; }
+        footer {
+            margin-top: 40px; text-align: center; padding: 18px 10px; background: var(--primary-dark);
+            border-radius: var(--border-radius); box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-top: 3px solid var(--accent);
+        }
+        footer a {
+            color: #fff; text-decoration: none; font-weight: 800; font-size: 1.05rem;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.4rem; }
+            .tools-bar { flex-direction: column; align-items: stretch; }
+            .tool-group { justify-content: space-between; }
+        }
+    </style>
+</head>
+<body data-theme="sky-sea">
+<div class="container" id="printableArea">
+    <header>
+        <h1>📚 متابع تراكمات - المرحلة الثانية</h1>
+        <p>تخصيص كامل للسستم والمواد المنفصلة مع تقسيم النظري والعملي والملاحظات</p>
+    </header>
+    <div class="tools-bar" data-html2canvas-ignore="true">
+        <div class="tool-group">
+            <select class="theme-select" id="themeSelect" onchange="changeColorPalette(this.value)">
+                <option value="sky-sea">🌊 سمائي وبحري</option>
+                <option value="brown-beige">☕ بني غامق وبيجي</option>
+                <option value="pink-white">🌸 وردي فاتح وأبيض</option>
+                <option value="burgundy">🍷 عنابي وذهبي</option>
+            </select>
+            <button class="tool-btn" onclick="toggleDarkMode()"><span id="darkModeIcon">🌙</span> <span id="darkModeText">الوضع الداكن الأسود</span></button>
+        </div>
+        <div class="tool-group">
+            <button class="tool-btn btn-add-system" onclick="addSystemModule()">🫀 إضافة سستم جديد</button>
+            <button class="tool-btn btn-add-standalone" onclick="addStandaloneSubject()">💊 إضافة مادة منفصلة</button>
+            <button class="tool-btn" onclick="exportToPDF()">📄 تصدير كـ PDF</button>
+        </div>
+    </div>
+    <div class="overall-progress-card">
+        <div class="progress-header"><span>نسبة الإنجاز الكلية للمرحلة:</span><span id="overallPercent">0%</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="overallFill"></div></div>
+    </div>
+    <div class="modules-nav" id="modulesNav" data-html2canvas-ignore="true"></div>
+    <div id="modulesContainer"></div>
+</div>
+<footer data-html2canvas-ignore="true">
+    <a href="https://t.me/medicinewithfunny" target="_blank" rel="noopener noreferrer">مشغل بواسطة: طب 🩺 وسد الباب🚪</a>
+</footer>
+<script>
+    const makeList = (prefix, count) => Array.from({length: count}, (_, i) => `${prefix}-${i + 1}`);
+    const defaultModulesData = {
+        cvs: {
+            title: 'CVS | Cardiovascular System', type: 'system', icon: '🫀',
+            sections: [
+                { name: '📚 النظري', subjects: [
+                    { id: 'cvs_anat', name: 'Anatomy', lectures: makeList('Lec', 4) },
+                    { id: 'cvs_physio', name: 'Physiology', lectures: makeList('Lec', 5) }
+                ]},
+                { name: '🔬 العملي & TBL', subjects: [
+                    { id: 'cvs_prac', name: 'Practical Labs', lectures: makeList('Lab', 2) }
+                ]}
+            ]
+        },
+        pharma: {
+            title: 'Pharmacology', type: 'standalone', icon: '💊',
+            sections: [
+                { id: 'pharma_theory', name: '📚 النظري', lectures: makeList('Lec', 6) },
+                { id: 'pharma_prac', name: '🔬 العملي', lectures: makeList('Lab', 2) }
+            ]
+        }
+    };
+    let modulesData = JSON.parse(localStorage.getItem('stage2_v4_modules_config')) || defaultModulesData;
+    let savedState = JSON.parse(localStorage.getItem('stage2_v4_progress')) || {};
+    let notesData = JSON.parse(localStorage.getItem('stage2_v4_notes')) || {};
+    let activeModule = Object.keys(modulesData)[0] || '';
+    let activeTheme = localStorage.getItem('stage2_theme') || 'sky-sea';
+    let isDarkMode = localStorage.getItem('stage2_darkmode') === 'true';
+
+    function applyThemeSettings() {
+        document.body.setAttribute('data-theme', activeTheme);
+        document.getElementById('themeSelect').value = activeTheme;
+        if (isDarkMode) {
+            document.body.classList.add('dark-mode');
+            document.getElementById('darkModeIcon').innerText = '☀️';
+            document.getElementById('darkModeText').innerText = 'الوضع الفاتح';
+        } else {
+            document.body.classList.remove('dark-mode');
+            document.getElementById('darkModeIcon').innerText = '🌙';
+            document.getElementById('darkModeText').innerText = 'الوضع الداكن الأسود';
+        }
+    }
+    function changeColorPalette(theme) { activeTheme = theme; localStorage.setItem('stage2_theme', theme); applyThemeSettings(); }
+    function toggleDarkMode() { isDarkMode = !isDarkMode; localStorage.setItem('stage2_darkmode', isDarkMode); applyThemeSettings(); }
+    function switchModule(modKey) { activeModule = modKey; renderNav(); render(); }
+    function renderNav() {
+        const nav = document.getElementById('modulesNav'); nav.innerHTML = '';
+        Object.keys(modulesData).forEach(key => {
+            const mod = modulesData[key];
+            const btn = document.createElement('button');
+            btn.className = `module-tab ${key === activeModule ? 'active' : ''}`;
+            btn.onclick = () => switchModule(key);
+            btn.innerHTML = `
+                <span class="module-icon">${mod.icon || '📖'}</span><span>${mod.title}</span>
+                <span class="type-badge">${mod.type === 'system' ? 'سستم' : 'مادة'}</span>
+                <span class="icon-btn" onclick="event.stopPropagation(); editModuleTitle('${key}')">✏️</span>
+                <span class="icon-btn" onclick="event.stopPropagation(); deleteModule('${key}')">🗑️</span>`;
+            nav.appendChild(btn);
+        });
+    }
+    function calculateOverallProgress() {
+        let totalLectures = 0, totalCompleted = 0;
+        Object.keys(modulesData).forEach(modKey => {
+            const mod = modulesData[modKey];
+            if (mod.type === 'system') {
+                mod.sections.forEach(sec => sec.subjects.forEach(sub => {
+                    const subState = savedState[sub.id] || {};
+                    sub.lectures.forEach((_, idx) => { totalLectures++; if (subState[idx]) totalCompleted++; });
+                }));
+            } else {
+                (mod.sections || []).forEach(sec => {
+                    const secState = savedState[sec.id] || {};
+                    (sec.lectures || []).forEach((_, idx) => { totalLectures++; if (secState[idx]) totalCompleted++; });
+                });
+            }
+        });
+        const percent = totalLectures > 0 ? Math.round((totalCompleted / totalLectures) * 100) : 0;
+        document.getElementById('overallPercent').innerText = `${percent}% (${totalCompleted}/${totalLectures})`;
+        document.getElementById('overallFill').style.width = `${percent}%`;
+    }
+    function render() {
+        const container = document.getElementById('modulesContainer'); container.innerHTML = '';
+        if (!activeModule || !modulesData[activeModule]) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted);">لا يوجد عناصر، اضغط على الأزرار أعلاه لإضافة سستم أو مادة جديدة 🚀</div>';
+            calculateOverallProgress(); return;
+        }
+        const modData = modulesData[activeModule], modEl = document.createElement('div');
+        if (modData.type === 'system') {
+            modData.sections.forEach((sec, secIdx) => {
+                const secHeader = document.createElement('div'); secHeader.className = 'section-header-box';
+                secHeader.innerHTML = `<div class="section-title"><span>${sec.name}</span><button class="icon-btn" onclick="editSectionName('${secIdx}')">✏️</button></div>
+                    <button class="tool-btn" style="padding:3px 8px;font-size:0.78rem;" onclick="addSubjectToSection('${secIdx}')">➕ إضافة مادة للسستم</button>`;
+                modEl.appendChild(secHeader);
+                const grid = document.createElement('div'); grid.className = 'subjects-grid';
+                sec.subjects.forEach((sub, subIdx) => {
+                    if (!savedState[sub.id]) savedState[sub.id] = {};
+                    let completedCount = 0; const totalCount = sub.lectures.length;
+                    sub.lectures.forEach((_, idx) => { if (savedState[sub.id][idx]) completedCount++; });
+                    const pendingCount = totalCount - completedCount, card = document.createElement('div');
+                    card.className = 'subject-card'; card.id = `card-${sub.id}`;
+                    card.innerHTML = `<div class="subject-header" onclick="toggleCard('${sub.id}')">
+                        <div class="subject-title"><span>${sub.name}</span>
+                        <button class="icon-btn" onclick="event.stopPropagation(); editSubjectTitle('${secIdx}', '${subIdx}')">✏️</button>
+                        <button class="icon-btn" onclick="event.stopPropagation(); deleteSubject('${secIdx}', '${subIdx}')">🗑️</button></div>
+                        <div class="subject-stats"><span class="badge badge-completed">مكتمل: ${completedCount}</span>
+                        <span class="badge badge-pending">متراكم: ${pendingCount}</span></div></div>
+                        <div class="lectures-list">${renderLecturesHtml(sub.id, sub.lectures, secIdx, subIdx, false)}
+                        <button class="add-lecture-btn" onclick="addLectureToSubject('${secIdx}', '${subIdx}')">➕ إضافة محاضرة لهذه المادة</button></div>`;
+                    grid.appendChild(card);
+                });
+                modEl.appendChild(grid);
+            });
+            const addSecBtn = document.createElement('button'); addSecBtn.className = 'tool-btn btn-add-system';
+            addSecBtn.style.cssText = 'margin-top:20px;width:100%;padding:10px;justify-content:center;';
+            addSecBtn.innerText = '➕ إضافة قسم جديد للسستم (مثلاً: عملي/نظري)'; addSecBtn.onclick = addNewSection; modEl.appendChild(addSecBtn);
+        } else {
+            const grid = document.createElement('div'); grid.className = 'subjects-grid';
+            (modData.sections || []).forEach((sec, secIdx) => {
+                if (!savedState[sec.id]) savedState[sec.id] = {};
+                let completedCount = 0; const totalCount = (sec.lectures || []).length;
+                (sec.lectures || []).forEach((_, idx) => { if (savedState[sec.id][idx]) completedCount++; });
+                const pendingCount = totalCount - completedCount, card = document.createElement('div');
+                card.className = 'subject-card active'; card.id = `card-${sec.id}`;
+                card.innerHTML = `<div class="subject-header" onclick="toggleCard('${sec.id}')">
+                    <div class="subject-title"><span>${sec.name}</span>
+                    <button class="icon-btn" onclick="event.stopPropagation(); editStandaloneSectionName(${secIdx})">✏️</button>
+                    <button class="icon-btn" onclick="event.stopPropagation(); deleteStandaloneSection(${secIdx})">🗑️</button></div>
+                    <div class="subject-stats"><span class="badge badge-completed">مكتمل: ${completedCount}</span>
+                    <span class="badge badge-pending">متراكم: ${pendingCount}</span></div></div>
+                    <div class="lectures-list">${renderLecturesHtml(sec.id, sec.lectures || [], secIdx, null, true)}
+                    <button class="add-lecture-btn" onclick="addLectureToStandaloneSection(${secIdx})">➕ إضافة محاضرة للـ (${sec.name})</button></div>`;
+                grid.appendChild(card);
+            });
+            modEl.appendChild(grid);
+            const addSecBtn = document.createElement('button'); addSecBtn.className = 'tool-btn btn-add-standalone';
+            addSecBtn.style.cssText = 'margin-top:20px;width:100%;padding:10px;justify-content:center;';
+            addSecBtn.innerText = '➕ إضافة قسم جديد للمادة (مثلاً: عملي / نظري / TBL)';
+            addSecBtn.onclick = addSectionToStandalone; modEl.appendChild(addSecBtn);
+        }
+        container.appendChild(modEl); calculateOverallProgress();
+    }
+    function renderLecturesHtml(subId, lecturesList, secIdx, subIdx, isStandalone) {
+        if (!savedState[subId]) savedState[subId] = {};
+        return lecturesList.map((lec, idx) => {
+            const isDone = !!savedState[subId][idx], noteKey = `${subId}_${idx}`, noteText = notesData[noteKey] || '';
+            const editFn = isStandalone ? `editStandaloneLecture(${secIdx}, ${idx})` : `editLectureTitle('${secIdx}', '${subIdx}', ${idx})`;
+            const delFn = isStandalone ? `deleteStandaloneLecture(${secIdx}, ${idx})` : `deleteLecture('${secIdx}', '${subIdx}', ${idx})`;
+            return `<div class="lecture-item-container"><div class="lecture-item"><div class="lecture-info">
+                <input type="checkbox" class="lecture-checkbox" ${isDone ? 'checked' : ''} onchange="toggleLecture('${subId}',${idx})">
+                <span class="lecture-title ${isDone ? 'done' : ''}">${lec}</span>
+                <button class="icon-btn" onclick="${editFn}">✏️</button><button class="icon-btn" onclick="toggleNoteField('${noteKey}')">📝</button>
+                <button class="icon-btn" onclick="${delFn}">🗑️</button></div>
+                <span class="status-tag ${isDone ? 'done' : 'pending'}">${isDone ? 'مكتملة ✓' : 'متراكمة ✗'}</span></div>
+                <div id="note-box-${noteKey}" class="lecture-note-area" style="display:${noteText ? 'block' : 'none'};">
+                <input type="text" class="note-input" value="${noteText}" placeholder="اكتب ملاحظة..." onchange="saveNote('${noteKey}', this.value)"></div></div>`;
+        }).join('');
+    }
+    function toggleCard(subId) { const card = document.getElementById(`card-${subId}`); if (card) card.classList.toggle('active'); }
+    function toggleLecture(subId, idx) {
+        if (!savedState[subId]) savedState[subId] = {};
+        savedState[subId][idx] = !savedState[subId][idx];
+        localStorage.setItem('stage2_v4_progress', JSON.stringify(savedState)); refreshKeepActive();
+    }
+    function addSystemModule() {
+        const title = prompt("أدخل اسم السستم الجديد (مثلاً: Respiratory System):");
+        if (!title || !title.trim()) return;
+        const icon = prompt("أدخل إيموجي مميز للسستم (اختياري):", "🫁") || "🫀", key = 'mod_' + Date.now();
+        modulesData[key] = { title: title.trim(), type: 'system', icon: icon.trim(), sections: [
+            { name: '📚 النظري', subjects: [] }, { name: '🔬 العملي', subjects: [] }
+        ]};
+        saveModulesConfig(); switchModule(key);
+    }
+    function addStandaloneSubject() {
+        const title = prompt("أدخل اسم المادة المنفصلة (مثلاً: Pharmacology):");
+        if (!title || !title.trim()) return;
+        const icon = prompt("أدخل إيموجي مميز للمادة (اختياري):", "💊") || "📚", key = 'mod_' + Date.now();
+        modulesData[key] = { title: title.trim(), type: 'standalone', icon: icon.trim(), sections: [
+            { id: 'sec_' + Date.now() + '_1', name: '📚 النظري', lectures: ['Lec-1'] },
+            { id: 'sec_' + Date.now() + '_2', name: '🔬 العملي', lectures: ['Lab-1'] }
+        ]};
+        saveModulesConfig(); switchModule(key);
+    }
+    function deleteModule(key) {
+        if (confirm("هل أنت تأكد من الحذف بالكامل؟")) {
+            delete modulesData[key]; saveModulesConfig(); activeModule = Object.keys(modulesData)[0] || ''; renderNav(); render();
+        }
+    }
+    function editModuleTitle(modKey) {
+        const newName = prompt("تعديل الاسم:", modulesData[modKey].title);
+        if (newName && newName.trim() !== "") { modulesData[modKey].title = newName.trim(); saveModulesConfig(); renderNav(); }
+    }
+    function addNewSection() {
+        const secName = prompt("أدخل اسم القسم الجديد بالسستم:");
+        if (secName && secName.trim()) { modulesData[activeModule].sections.push({ name: secName.trim(), subjects: [] }); saveModulesConfig(); render(); }
+    }
+    function editSectionName(secIdx) {
+        const sec = modulesData[activeModule].sections[secIdx], newName = prompt("تعديل اسم القسم:", sec.name);
+        if (newName && newName.trim()) { sec.name = newName.trim(); saveModulesConfig(); render(); }
+    }
+    function addSubjectToSection(secIdx) {
+        const subName = prompt("أدخل اسم المادة داخل السستم:");
+        if (!subName || !subName.trim()) return;
+        modulesData[activeModule].sections[secIdx].subjects.push({ id: 'sub_' + Date.now(), name: subName.trim(), lectures: ['Lec-1'] });
+        saveModulesConfig(); render();
+    }
+    function deleteSubject(secIdx, subIdx) {
+        if (confirm("هل تريد حذف هذه المادة؟")) { modulesData[activeModule].sections[secIdx].subjects.splice(subIdx, 1); saveModulesConfig(); render(); }
+    }
+    function editSubjectTitle(secIdx, subIdx) {
+        const sub = modulesData[activeModule].sections[secIdx].subjects[subIdx], newName = prompt("تعديل اسم المادة:", sub.name);
+        if (newName && newName.trim()) { sub.name = newName.trim(); saveModulesConfig(); render(); }
+    }
+    function addLectureToSubject(secIdx, subIdx) {
+        const sub = modulesData[activeModule].sections[secIdx].subjects[subIdx], lecName = prompt("اسم المحاضرة الجديدة:", `Lec-${sub.lectures.length + 1}`);
+        if (lecName && lecName.trim()) { sub.lectures.push(lecName.trim()); saveModulesConfig(); refreshKeepActive(); }
+    }
+    function deleteLecture(secIdx, subIdx, lecIdx) {
+        if (confirm("حذف المحاضرة؟")) { const sub = modulesData[activeModule].sections[secIdx].subjects[subIdx]; sub.lectures.splice(lecIdx, 1); saveModulesConfig(); refreshKeepActive(); }
+    }
+    function editLectureTitle(secIdx, subIdx, lecIdx) {
+        const sub = modulesData[activeModule].sections[secIdx].subjects[subIdx], newName = prompt("تعديل اسم المحاضرة:", sub.lectures[lecIdx]);
+        if (newName && newName.trim()) { sub.lectures[lecIdx] = newName.trim(); saveModulesConfig(); refreshKeepActive(); }
+    }
+    function addSectionToStandalone() {
+        const secName = prompt("أدخل اسم القسم للمادة المنفصلة (مثلاً: 👥 TBL أو 🧪 السلايدات):");
+        if (secName && secName.trim()) {
+            const mod = modulesData[activeModule]; if (!mod.sections) mod.sections = [];
+            mod.sections.push({ id: 'sec_' + Date.now(), name: secName.trim(), lectures: ['Lec-1'] }); saveModulesConfig(); render();
+        }
+    }
+    function editStandaloneSectionName(secIdx) {
+        const sec = modulesData[activeModule].sections[secIdx], newName = prompt("تعديل اسم القسم:", sec.name);
+        if (newName && newName.trim()) { sec.name = newName.trim(); saveModulesConfig(); render(); }
+    }
+    function deleteStandaloneSection(secIdx) {
+        if (confirm("هل تريد حذف هذا القسم بالمادة المنفصلة؟")) { modulesData[activeModule].sections.splice(secIdx, 1); saveModulesConfig(); render(); }
+    }
+    function addLectureToStandaloneSection(secIdx) {
+        const sec = modulesData[activeModule].sections[secIdx]; if (!sec.lectures) sec.lectures = [];
+        const lecName = prompt("اسم المحاضرة الجديدة:", `Lec-${sec.lectures.length + 1}`);
+        if (lecName && lecName.trim()) { sec.lectures.push(lecName.trim()); saveModulesConfig(); refreshKeepActive(); }
+    }
+    function editStandaloneLecture(secIdx, lecIdx) {
+        const sec = modulesData[activeModule].sections[secIdx], newName = prompt("تعديل اسم المحاضرة:", sec.lectures[lecIdx]);
+        if (newName && newName.trim()) { sec.lectures[lecIdx] = newName.trim(); saveModulesConfig(); refreshKeepActive(); }
+    }
+    function deleteStandaloneLecture(secIdx, lecIdx) {
+        if (confirm("حذف المحاضرة؟")) { const sec = modulesData[activeModule].sections[secIdx]; sec.lectures.splice(lecIdx, 1); saveModulesConfig(); refreshKeepActive(); }
+    }
+    function refreshKeepActive() {
+        const openCardIds = Array.from(document.querySelectorAll('.subject-card.active')).map(c => c.id);
+        render(); openCardIds.forEach(id => { const card = document.getElementById(id); if (card) card.classList.add('active'); });
+    }
+    function saveModulesConfig() { localStorage.setItem('stage2_v4_modules_config', JSON.stringify(modulesData)); }
+    function toggleNoteField(noteKey) {
+        const el = document.getElementById(`note-box-${noteKey}`);
+        if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+    function saveNote(noteKey, text) { notesData[noteKey] = text.trim(); localStorage.setItem('stage2_v4_notes', JSON.stringify(notesData)); }
+    function exportToPDF() {
+        document.querySelectorAll('.subject-card').forEach(card => card.classList.add('active'));
+        const element = document.getElementById('printableArea');
+        const opt = {
+            margin: 0.3, filename: 'تراكمات_المرحلة_الثانية.pdf',
+            image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save().then(() => { render(); });
+    }
+    applyThemeSettings(); renderNav(); render();
+</script>
+</body>
+</html>
